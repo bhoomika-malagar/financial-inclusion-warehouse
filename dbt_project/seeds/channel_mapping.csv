@@ -1,0 +1,6 @@
+channel,channel_name,channel_group,is_digital
+UPI,UPI,Digital,true
+BANK_TRANSFER,Bank transfer (NEFT/IMPS),Digital,true
+NACH,NACH auto-debit,Digital,true
+CASH,Cash at branch,Cash,false
+UNKNOWN,Channel not recorded,Unknown,false

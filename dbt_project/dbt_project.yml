@@ -1,16 +1,7 @@
-
-# Name your project! Project names should contain only lowercase characters
-# and underscores. A good package name should reflect your organization's
-# name or the intended use of these models
 name: 'dbt_project'
 version: '1.0.0'
-
-# This setting configures which "profile" dbt uses for this project.
 profile: 'dbt_project'
 
-# These configurations specify where dbt should look for different types of files.
-# The `model-paths` config, for example, states that models in this project can be
-# found in the "models/" directory. You probably won't need to change these!
 model-paths: ["models"]
 analysis-paths: ["analyses"]
 test-paths: ["tests"]
@@ -18,19 +9,30 @@ seed-paths: ["seeds"]
 macro-paths: ["macros"]
 snapshot-paths: ["snapshots"]
 
-clean-targets:         # directories to be removed by `dbt clean`
-  - "target"
-  - "dbt_packages"
+clean-targets: ["target", "dbt_packages"]
 
+# Business constants used by the models. Kept here (not hard-coded in SQL)
+# so every model uses the same values and they are easy to find and change.
+vars:
+  as_of_date: '2026-06-30'          # reporting date of the loan book
+  date_spine_start: '2023-01-01'
+  date_spine_end: '2026-12-31'
+  # From profiling check P-06: upi_gateway switched to paise from this date.
+  upi_paise_source: 'upi_gateway'
+  upi_paise_from_date: '2025-10-01'
 
-# Configuring models
-# Full documentation: https://docs.getdbt.com/docs/configuring-models
-
-# In this example config, we tell dbt to build all models in the example/
-# directory as views. These settings can be overridden in the individual model
-# files using the `{{ config(...) }}` macro.
 models:
   dbt_project:
-    # Config indicated by + and applies to all files under models/example/
-    example:
+    staging:
+      +schema: staging
+      +materialized: view        # light, always reflects raw
+    intermediate:
+      +schema: staging
       +materialized: view
+    marts:
+      +schema: marts
+      +materialized: table       # dashboards read these, so store them
+
+seeds:
+  dbt_project:
+    +schema: staging

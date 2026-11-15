@@ -1,0 +1,14 @@
+version: 2
+
+sources:
+  - name: raw
+    description: Source files exactly as delivered, loaded by load/load_raw.py. Never modified.
+    schema: raw
+    tables:
+      - name: branches
+      - name: products
+      - name: borrowers
+      - name: loans
+      - name: repayment_schedule
+      - name: loan_monthly_snapshot
+      - name: repayments
