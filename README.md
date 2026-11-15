@@ -93,8 +93,10 @@ python hand_check/hand_check_par30.py    # 7. independent PAR30 check from raw C
 Set `GCP_PROJECT` if your project ID is not `fin-inclusion-dwh`, and point the `dbt_project`
 profile in `~/.dbt/profiles.yml` at the same project (method `oauth`, location `asia-south1`).
 
-**Windows note:** if Smart App Control blocks `dbt.exe`, use the included `dbt.bat`
-(`..\dbt build` from inside `dbt_project`), which runs dbt through Python.
+**Windows note:** if Smart App Control blocks `dbt.exe`, run dbt through Python instead:
+`python -m dbt.cli.main build`. For a shorter command, create a file `dbt.bat` in the project root
+containing the single line `@python -m dbt.cli.main %*`, then run `..\dbt build` from inside
+`dbt_project`. (The file is not included in the zip because email filters block `.bat` files.)
 
 **Expected `dbt build` result:** `PASS=83 WARN=13 ERROR=0`. The 13 warnings are tests catching
 the seeded problems, see [`docs/test_results.md`](docs/test_results.md).
