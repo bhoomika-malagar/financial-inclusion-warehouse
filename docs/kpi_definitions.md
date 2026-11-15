@@ -23,14 +23,14 @@ $$\text{PAR30}_m = \frac{\sum \text{OS of loans with DPD} > 30 \text{ at month-e
 * Excludes written-off loans from numerator and denominator.
 * Model: `kpi_portfolio_summary.par30_pct`; by branch/product from `kpi_portfolio_monthly` as
   Σ `par30_outstanding` / Σ `gross_loan_portfolio`.
-* Value at 30 Jun 2026: **4.01 %**
+* Value at 30 Jun 2026: **3.05 %**
 
 ### 2. Portfolio at Risk over 90 days (PAR90)
 
 $$\text{PAR90}_m = \frac{\sum \text{OS of loans with DPD} > 90 \text{ at month-end } m}{\text{GLP}_m} \times 100$$
 
 * Same rules as PAR30 with a 90-day threshold. PAR90 ≤ PAR30 always (tested).
-* Value at 30 Jun 2026: **1.24 %**
+* Value at 30 Jun 2026: **1.23 %**
 
 ### 3. Collection efficiency (CE)
 
@@ -41,7 +41,7 @@ $$\text{CE}_m = \frac{\sum \text{amount collected in month } m}{\sum \text{amoun
 * Collections include arrears paid late, so CE can exceed 100 % in a month when borrowers catch up.
 * Source is the loan-management snapshot, not the transaction feed, so it is unaffected by
   the missing BR012 file for August 2025.
-* Value for June 2026: **95.70 %**
+* Value for June 2026: **95.71 %**
 
 ### 4. Repayment vintage curve
 
@@ -64,7 +64,7 @@ $$\text{Digital share (count)}_m = \frac{\text{number of digital payments}}{\tex
 * "Digital" = every channel except cash, defined once in `dim_channel` (seed `channel_mapping.csv`).
 * Payments with no recorded channel (`UNKNOWN`) are excluded from both numerator and denominator.
 * All amounts use `amount_inr`: the upi_gateway values sent in paise from Oct 2025 are divided by 100.
-* Value for June 2026: **77.18 % by value, 75.38 % by count**
+* Value for June 2026: **77.27 % by value, 75.46 % by count**
 
 ### 6. Growth of digital collections
 

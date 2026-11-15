@@ -258,6 +258,16 @@ def build_schedule(loans: pl.DataFrame, as_of: np.datetime64, rng) -> pl.DataFra
     paid = paid.astype("datetime64[D]")
     paid_mask = ~(never_paid | not_yet)
 
+    # Payments are applied to the OLDEST unpaid instalment first (FIFO), as a
+    # loan-management system does. So within each loan, the earliest payment
+    # date settles instalment 1, the next settles instalment 2, and so on.
+    # (Each instalment can be at most 5 days early, as before.)
+    paid_int = np.where(paid_mask, paid.astype("int64"), np.iinfo("int64").max)
+    order = np.lexsort((paid_int, idx))          # by loan, then payment date
+    paid_int = paid_int[order]
+    paid_mask = paid_int != np.iinfo("int64").max
+    paid = np.where(paid_mask, paid_int, 0).astype("datetime64[D]")
+
     sched = pl.DataFrame(
         {
             "loan_id": loans["loan_id"].to_numpy()[idx],
