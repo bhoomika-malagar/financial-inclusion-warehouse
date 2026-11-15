@@ -99,6 +99,40 @@ profile in `~/.dbt/profiles.yml` at the same project (method `oauth`, location `
 **Expected `dbt build` result:** `PASS=83 WARN=13 ERROR=0`. The 13 warnings are tests catching
 the seeded problems, see [`docs/test_results.md`](docs/test_results.md).
 
+## Assumptions
+
+**Data generation**
+* All data is invented by `generator/generate_data.py`; no external dataset is used. A fixed seed
+  (`config.yaml`) makes every run identical.
+* Reporting date (as-of) is **30 June 2026**. Loans are disbursed from January 2024 to May 2026, so
+  repayments cover January 2024 to June 2026.
+* Every loan repays in equal monthly instalments (reducing-balance EMI), due on the same day of the
+  month as disbursement (day 1–28).
+* Each loan behaves as on-time, late or defaulting, with probabilities that depend on state, branch,
+  product and borrower segment. Digital payment adoption rises over time.
+* Payments are applied to the **oldest unpaid instalment first**, as a loan-management system does.
+
+**KPI rules**
+* Days past due = days since the oldest unpaid instalment fell due.
+* A loan more than **180 days past due is written off** and leaves the book; written-off loans are
+  excluded from the gross loan portfolio and from PAR.
+* PAR counts the **whole outstanding principal** of an overdue loan, not only the overdue instalments.
+* Collection efficiency = amount collected in a month ÷ amount due in that month. Collections include
+  arrears, so a month can exceed 100 %.
+* The month-end loan snapshot is the system of record for PAR and collection efficiency; the payment
+  transactions are used for channel analysis.
+* Digital = UPI, bank transfer and NACH. Payments with no recorded channel are excluded from the
+  digital-share calculation.
+
+**Data-quality handling**
+* The upi_gateway switch to paise is taken to start on **1 October 2025**, the date profiling shows
+  the jump; all its amounts from that date are divided by 100.
+* For duplicate loan records, the latest `last_updated_at` is kept.
+* Negative amounts are treated as errors, not reversals, and are quarantined with orphan, future-dated
+  and before-disbursement payments (142 rows), not deleted.
+* The missing BR012 month (SI-02) and the 15 paid-more-than-due snapshot rows (SI-09) are not
+  corrected, because the correct values cannot be derived; tests flag them.
+
 ## Notes
 
 * All data is invented. Branch towns are real place names; people, loans and amounts are not.
