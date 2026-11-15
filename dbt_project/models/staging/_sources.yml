@@ -1,14 +1,77 @@
 version: 2
 
+# ---------------------------------------------------------------------------
+# SOURCE TESTS: run on raw data exactly as delivered.
+# Purpose: DETECT problems in what the source systems send.
+# Severity is "warn": a bad source file should be reported, not stop the
+# pipeline, because staging is built to handle these problems.
+# meta.seeded_issue links each test to the answer key (generator/seeded_issues.yaml).
+# ---------------------------------------------------------------------------
+
 sources:
   - name: raw
     description: Source files exactly as delivered, loaded by load/load_raw.py. Never modified.
     schema: raw
     tables:
       - name: branches
+        columns:
+          - name: state
+            data_tests:
+              - accepted_values:
+                  name: raw_branch_state_in_known_list
+                  arguments:
+                    values: ['Karnataka', 'Maharashtra', 'Tamil Nadu', 'Odisha', 'Uttar Pradesh', 'Bihar']
+                  config: {severity: warn, meta: {seeded_issue: SI-10}}
+
       - name: products
       - name: borrowers
+
       - name: loans
+        columns:
+          - name: loan_id
+            data_tests:
+              - unique:
+                  name: raw_loan_id_unique
+                  config: {severity: warn, meta: {seeded_issue: SI-04}}
+
       - name: repayment_schedule
+
       - name: loan_monthly_snapshot
+        data_tests:
+          - dbt_utils.expression_is_true:
+              name: raw_snapshot_paid_not_above_due
+              arguments:
+                expression: "instalments_paid_cum <= instalments_due_cum"
+              config: {severity: warn, meta: {seeded_issue: SI-09}}
+
       - name: repayments
+        data_tests:
+          - dbt_utils.expression_is_true:
+              name: raw_repayment_amount_not_negative
+              arguments:
+                expression: "amount >= 0"
+              config: {severity: warn, meta: {seeded_issue: SI-05}}
+          - dbt_utils.expression_is_true:
+              name: raw_repayment_not_after_as_of_date
+              arguments:
+                expression: "txn_date <= date '{{ var('as_of_date') }}'"
+              config: {severity: warn, meta: {seeded_issue: SI-11}}
+        columns:
+          - name: txn_id
+            data_tests:
+              - unique:
+                  name: raw_repayment_txn_id_unique
+                  config: {severity: warn, meta: {seeded_issue: SI-01}}
+          - name: channel
+            data_tests:
+              - not_null:
+                  name: raw_repayment_channel_not_null
+                  config: {severity: warn, meta: {seeded_issue: SI-08}}
+          - name: loan_id
+            data_tests:
+              - relationships:
+                  name: raw_repayment_loan_id_exists_in_loans
+                  arguments:
+                    to: source('raw', 'loans')
+                    field: loan_id
+                  config: {severity: warn, meta: {seeded_issue: SI-06}}

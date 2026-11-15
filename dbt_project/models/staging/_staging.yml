@@ -1,0 +1,34 @@
+version: 2
+
+# Staging tests prove the cleaning steps worked (severity: error).
+models:
+  - name: stg_loans
+    description: One row per loan; duplicates removed (latest record kept).
+    columns:
+      - name: loan_id
+        data_tests: [unique, not_null]
+
+  - name: stg_repayments
+    description: One row per unique payment, amounts in rupees, channel filled.
+    columns:
+      - name: txn_id
+        data_tests: [unique, not_null]
+      - name: channel
+        data_tests:
+          - not_null
+          - relationships:
+              name: stg_repayment_channel_in_mapping
+              arguments:
+                to: ref('channel_mapping')
+                field: channel
+
+  - name: stg_branches
+    columns:
+      - name: branch_id
+        data_tests: [unique, not_null]
+      - name: state
+        data_tests:
+          - accepted_values:
+              name: stg_branch_state_in_known_list
+              arguments:
+                values: ['Karnataka', 'Maharashtra', 'Tamil Nadu', 'Odisha', 'Uttar Pradesh', 'Bihar']
