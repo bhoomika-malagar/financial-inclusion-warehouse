@@ -1,0 +1,86 @@
+# ------------------------------------------------------------------
+# Seeded data problems: the "answer key".
+# These are injected on purpose by generate_data.py (see seed_issues()).
+# Exact row counts and example keys for each run are written to
+#   data/ground_truth/seeded_issues_log.csv
+# Later stages compare profiling + dbt test results against this list.
+# ------------------------------------------------------------------
+
+- id: SI-01
+  name: Duplicate transaction rows
+  table: repayments
+  what: 1,200 rows appear twice, identical in every column (file re-sent / double-loaded).
+  real_world_cause: Payment gateway retried a file upload; loader appended it twice.
+  expected_detection: unique test on txn_id; row count vs distinct count in profiling.
+
+- id: SI-02
+  name: Missing month for one branch
+  table: repayments
+  what: All transactions for branch BR012 (Salem) in August 2025 are missing.
+  real_world_cause: That branch's collection file for the month never reached head office.
+  expected_detection: completeness test (every active branch has collections every month);
+                      reconciliation of snapshot amount_paid_in_month vs transactions.
+
+- id: SI-03
+  name: Amounts in different units from one source
+  table: repayments
+  what: From 2025-10-01, source_system = upi_gateway sends amount in PAISE, not rupees (x100).
+  real_world_cause: Gateway moved to a new API version that reports minor currency units.
+  expected_detection: average payment size by source by month jumps ~100x; reconciliation
+                      against snapshot amount_paid_in_month; range test on amount vs EMI.
+
+- id: SI-04
+  name: Duplicate loan IDs
+  table: loans
+  what: 25 loans appear twice; the copy has last_updated_at 3 days later, other fields equal.
+  real_world_cause: Loan record re-sent after an edit; source exports full history.
+  expected_detection: unique test on loan_id in staging; fixed by keeping the latest record.
+
+- id: SI-05
+  name: Negative amounts
+  table: repayments
+  what: 40 payments have the sign flipped (negative amount).
+  real_world_cause: Reversal flag lost during export, so the sign was applied to a normal payment.
+  expected_detection: amount >= 0 test.
+
+- id: SI-06
+  name: Orphan loan IDs
+  table: repayments
+  what: 60 payments reference loan IDs (LN9xxxxxx) that do not exist in loans.
+  real_world_cause: Payments for loans booked on another system / test records.
+  expected_detection: relationships test (every repayment joins to a loan).
+
+- id: SI-07
+  name: Payment before disbursement
+  table: repayments
+  what: 30 payments are dated 5-60 days before their loan was disbursed.
+  real_world_cause: Wrong date keyed in at the branch.
+  expected_detection: txn_date >= disbursement_date test.
+
+- id: SI-08
+  name: Missing payment channel
+  table: repayments
+  what: 250 payments have an empty channel.
+  real_world_cause: Optional field left blank in the collection app.
+  expected_detection: not_null / accepted_values test on channel.
+
+- id: SI-09
+  name: Instalments paid exceed instalments due
+  table: loan_monthly_snapshot
+  what: 15 snapshot rows show instalments_paid_cum = instalments_due_cum + 1.
+  real_world_cause: Loan-management system bug when an advance payment is posted.
+  expected_detection: instalments_paid_cum <= instalments_due_cum test.
+
+- id: SI-10
+  name: Inconsistent state label
+  table: branches
+  what: Branch BR003 (Belagavi) has state "karnataka " (lowercase, trailing space).
+  real_world_cause: Manual entry in the branch master.
+  expected_detection: accepted_values test on state; profiling shows 7 distinct states, not 6.
+
+- id: SI-11
+  name: Future-dated transactions
+  table: repayments
+  what: 12 payments are dated after the as-of date (2026-06-30).
+  real_world_cause: Post-dated entries / wrong year keyed in.
+  expected_detection: txn_date <= as_of_date test.

@@ -1,0 +1,77 @@
+# ------------------------------------------------------------------
+# Configuration for the synthetic data generator.
+# Every "business assumption" lives here, not in the code, so you can
+# change the story (more loans, riskier states, faster UPI adoption)
+# without touching Python.
+# ------------------------------------------------------------------
+
+seed: 42                        # same seed -> identical data every run (reproducible)
+n_loans: 55000
+repeat_borrower_share: 0.10     # 10% of loans go to a borrower who already has a loan
+
+disbursement_start: 2024-01-01
+disbursement_end: 2026-05-31
+as_of_date: 2026-06-30          # "today" for the loan book; nothing happens after this
+portfolio_growth_per_month: 0.03  # later months disburse more loans than earlier ones
+
+# ---------------- Geography ----------------
+# risk:    multiplier on default / late probability (1.0 = average)
+# digital: share of payments made digitally at the start (Jan 2024)
+states:
+  Karnataka:     {risk: 0.85, digital: 0.40, branches: [Hubballi, Dharwad, Belagavi, Gadag, Haveri]}
+  Maharashtra:   {risk: 0.95, digital: 0.38, branches: [Kolhapur, Sangli, Solapur, Latur, Nanded]}
+  Tamil Nadu:    {risk: 0.80, digital: 0.42, branches: [Madurai, Tiruchirappalli, Salem, Erode, Tirunelveli]}
+  Odisha:        {risk: 1.10, digital: 0.22, branches: [Cuttack, Berhampur, Sambalpur, Balasore, Koraput]}
+  Uttar Pradesh: {risk: 1.25, digital: 0.20, branches: [Varanasi, Gorakhpur, Prayagraj, Bareilly, Sitapur]}
+  Bihar:         {risk: 1.35, digital: 0.15, branches: [Patna, Gaya, Muzaffarpur, Darbhanga, Purnia]}
+
+branch_risk_sigma: 0.45         # spread of branch quality around the state average (lognormal)
+
+# ---------------- Products ----------------
+products:
+  P01: {name: JLG Microloan,       category: Group,      min: 20000, max: 60000,  tenures: [12, 18, 24], rate: 0.24, risk: 1.00}
+  P02: {name: MSME Business Loan,  category: Individual, min: 50000, max: 300000, tenures: [12, 24, 36], rate: 0.21, risk: 0.80}
+  P03: {name: Kisan Crop Loan,     category: Agri,       min: 25000, max: 100000, tenures: [12, 18],     rate: 0.20, risk: 1.40}
+  P04: {name: Dairy & Livestock,   category: Agri,       min: 30000, max: 120000, tenures: [18, 24],     rate: 0.22, risk: 1.10}
+
+# ---------------- Borrower segments ----------------
+# weight:   share of borrowers in this segment
+# risk:     multiplier on default / late probability
+# products: which products this segment takes (probabilities sum to 1)
+segments:
+  S1: {name: Women JLG Member,     weight: 0.45, risk: 0.90, products: {P01: 0.85, P04: 0.15}}
+  S2: {name: Smallholder Farmer,   weight: 0.22, risk: 1.20, products: {P03: 0.65, P04: 0.35}}
+  S3: {name: Micro-entrepreneur,   weight: 0.18, risk: 0.85, products: {P02: 0.80, P01: 0.20}}
+  S4: {name: Informal Wage Earner, weight: 0.15, risk: 1.30, products: {P01: 0.70, P04: 0.30}}
+
+# ---------------- Repayment behaviour ----------------
+behaviour:
+  base_default_prob: 0.055      # before multipliers
+  base_late_prob: 0.17
+  write_off_dpd: 180             # loans more than 180 days overdue are written off and leave the book
+  split_payment_prob: 0.25      # late payers sometimes pay one instalment in two parts
+
+# ---------------- Payment channels ----------------
+digital:
+  growth_per_year: 0.18         # digital probability rises ~18 points per year
+  msme_bonus: 0.15              # MSME borrowers are more digital
+  max_share: 0.90
+  # how digital payments split across channels
+  mix_default: {UPI: 0.70, BANK_TRANSFER: 0.20, NACH: 0.10}
+  mix_msme:    {UPI: 0.40, BANK_TRANSFER: 0.20, NACH: 0.40}
+
+# ---------------- Seeded data problems ----------------
+# Deliberate errors so we can check whether profiling and tests catch them.
+# Full descriptions: generator/seeded_issues.yaml
+seeded_issues:
+  duplicate_txn_rows: 1200
+  missing_month: {branch_id: BR012, month: 2025-08}
+  paise_unit: {source_system: upi_gateway, from_date: 2025-10-01}
+  duplicate_loan_ids: 25
+  negative_amounts: 40
+  orphan_loan_ids: 60
+  payment_before_disbursement: 30
+  missing_channel: 250
+  future_dated_txns: 12
+  paid_exceeds_due: 15
+  bad_state_label: {branch_id: BR003, value: "karnataka "}
