@@ -1,0 +1,113 @@
+flowchart LR
+  subgraph G0["Raw sources: BigQuery raw"]
+    direction TB
+    raw_borrowers[("raw.borrowers")]
+    raw_branches[("raw.branches")]
+    raw_loan_monthly_snapshot[("raw.loan_monthly_snapshot")]
+    raw_loans[("raw.loans")]
+    raw_products[("raw.products")]
+    raw_repayment_schedule[("raw.repayment_schedule")]
+    raw_repayments[("raw.repayments")]
+  end
+  subgraph G1["Seed"]
+    direction TB
+    channel_mapping["channel_mapping"]
+  end
+  subgraph G2["Staging: views"]
+    direction TB
+    stg_borrowers["stg_borrowers"]
+    stg_branches["stg_branches"]
+    stg_loan_monthly_snapshot["stg_loan_monthly_snapshot"]
+    stg_loans["stg_loans"]
+    stg_products["stg_products"]
+    stg_repayment_schedule["stg_repayment_schedule"]
+    stg_repayments["stg_repayments"]
+  end
+  subgraph G3["Intermediate"]
+    direction TB
+    int_repayments_validated["int_repayments_validated"]
+  end
+  subgraph G4["Marts: core and audit"]
+    direction TB
+    audit_repayments_quarantine["audit_repayments_quarantine"]
+    dim_borrower_segment["dim_borrower_segment"]
+    dim_branch["dim_branch"]
+    dim_channel["dim_channel"]
+    dim_date["dim_date"]
+    dim_product["dim_product"]
+    fct_loan_repayment_monthly["fct_loan_repayment_monthly"]
+    fct_repayment_transaction["fct_repayment_transaction"]
+  end
+  subgraph G5["Marts: KPIs"]
+    direction TB
+    kpi_channel_monthly["kpi_channel_monthly"]
+    kpi_digital_collections_monthly["kpi_digital_collections_monthly"]
+    kpi_portfolio_monthly["kpi_portfolio_monthly"]
+    kpi_portfolio_summary["kpi_portfolio_summary"]
+    kpi_vintage_curves["kpi_vintage_curves"]
+  end
+  channel_mapping --> dim_channel
+  dim_branch --> kpi_portfolio_monthly
+  dim_channel --> fct_repayment_transaction
+  dim_channel --> kpi_channel_monthly
+  dim_channel --> kpi_digital_collections_monthly
+  dim_product --> kpi_portfolio_monthly
+  fct_loan_repayment_monthly --> kpi_portfolio_monthly
+  fct_loan_repayment_monthly --> kpi_vintage_curves
+  fct_repayment_transaction --> kpi_channel_monthly
+  fct_repayment_transaction --> kpi_digital_collections_monthly
+  int_repayments_validated --> audit_repayments_quarantine
+  int_repayments_validated --> fct_repayment_transaction
+  kpi_portfolio_monthly --> kpi_portfolio_summary
+  raw_borrowers --> stg_borrowers
+  raw_branches --> stg_branches
+  raw_loan_monthly_snapshot --> stg_loan_monthly_snapshot
+  raw_loans --> stg_loans
+  raw_products --> stg_products
+  raw_repayment_schedule --> stg_repayment_schedule
+  raw_repayments --> stg_repayments
+  stg_borrowers --> dim_borrower_segment
+  stg_borrowers --> fct_loan_repayment_monthly
+  stg_borrowers --> int_repayments_validated
+  stg_branches --> dim_branch
+  stg_loan_monthly_snapshot --> fct_loan_repayment_monthly
+  stg_loans --> fct_loan_repayment_monthly
+  stg_loans --> int_repayments_validated
+  stg_loans --> kpi_vintage_curves
+  stg_products --> dim_product
+  stg_repayment_schedule --> kpi_vintage_curves
+  stg_repayments --> int_repayments_validated
+  classDef src fill:#eef2f7,stroke:#64748b
+  classDef stg fill:#e0f2fe,stroke:#0284c7
+  classDef mart fill:#dcfce7,stroke:#16a34a
+  classDef kpi fill:#fef3c7,stroke:#d97706
+  classDef aud fill:#fee2e2,stroke:#dc2626
+  class dim_date mart
+  class dim_channel mart
+  class channel_mapping src
+  class stg_branches stg
+  class stg_repayments stg
+  class fct_loan_repayment_monthly mart
+  class fct_repayment_transaction mart
+  class dim_product mart
+  class stg_products stg
+  class dim_borrower_segment mart
+  class audit_repayments_quarantine aud
+  class int_repayments_validated stg
+  class stg_borrowers stg
+  class stg_loans stg
+  class stg_repayment_schedule stg
+  class stg_loan_monthly_snapshot stg
+  class dim_branch mart
+  class kpi_digital_collections_monthly kpi
+  class kpi_portfolio_monthly kpi
+  class kpi_vintage_curves kpi
+  class kpi_portfolio_summary kpi
+  class kpi_channel_monthly kpi
+  class raw_branches src
+  class raw_products src
+  class raw_borrowers src
+  class raw_loans src
+  class raw_repayment_schedule src
+  class raw_loan_monthly_snapshot src
+  class raw_repayments src

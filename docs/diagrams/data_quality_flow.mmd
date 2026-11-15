@@ -1,0 +1,33 @@
+flowchart LR
+  subgraph SRC["Seeded in raw data"]
+    direction TB
+    I01["SI-01 duplicate payments"]
+    I04["SI-04 duplicate loans"]
+    I03["SI-03 paise from upi_gateway"]
+    I08["SI-08 missing channel"]
+    I10["SI-10 bad state label"]
+    I05["SI-05 negative amounts"]
+    I06["SI-06 orphan loan IDs"]
+    I07["SI-07 paid before disbursement"]
+    I11["SI-11 future-dated payments"]
+    I02["SI-02 missing branch-month"]
+    I09["SI-09 paid more than due"]
+  end
+
+  FIX["Fixed in staging<br/>dedupe, paise / 100,<br/>UNKNOWN channel, trim state"]
+  QUAR["Quarantined: 142 rows<br/>audit_repayments_quarantine"]
+  FLAG["Cannot be fixed in SQL<br/>flagged by mart tests,<br/>reported to source teams"]
+  OUT["Clean marts<br/>fct_repayment_transaction<br/>fct_loan_repayment_monthly"]
+
+  I01 & I04 & I03 & I08 & I10 --> FIX --> OUT
+  I05 & I06 & I07 & I11 --> QUAR
+  I02 & I09 --> FLAG
+
+  classDef issue fill:#fee2e2,stroke:#dc2626
+  classDef fix fill:#dcfce7,stroke:#16a34a
+  classDef q fill:#fef3c7,stroke:#d97706
+  classDef f fill:#e0e7ff,stroke:#4f46e5
+  class I01,I02,I03,I04,I05,I06,I07,I08,I09,I10,I11 issue
+  class FIX,OUT fix
+  class QUAR q
+  class FLAG f

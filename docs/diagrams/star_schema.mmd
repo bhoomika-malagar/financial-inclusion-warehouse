@@ -1,0 +1,64 @@
+erDiagram
+    dim_date              ||--o{ fct_loan_repayment_monthly : "snapshot_month"
+    dim_date              ||--o{ fct_loan_repayment_monthly : "disbursement_month"
+    dim_branch            ||--o{ fct_loan_repayment_monthly : ""
+    dim_product           ||--o{ fct_loan_repayment_monthly : ""
+    dim_borrower_segment  ||--o{ fct_loan_repayment_monthly : ""
+    dim_date              ||--o{ fct_repayment_transaction : "txn_date"
+    dim_branch            ||--o{ fct_repayment_transaction : ""
+    dim_product           ||--o{ fct_repayment_transaction : ""
+    dim_borrower_segment  ||--o{ fct_repayment_transaction : ""
+    dim_channel           ||--o{ fct_repayment_transaction : ""
+
+    fct_loan_repayment_monthly {
+        string loan_id PK "grain: loan x month-end"
+        date snapshot_month PK
+        string branch_id FK
+        string product_id FK
+        string segment_id FK
+        date disbursement_month FK
+        int months_since_disbursement
+        string loan_status
+        float amount_due_in_month
+        float amount_paid_in_month
+        float principal_outstanding
+        int days_past_due
+        bool is_par30
+        bool is_par90
+    }
+    fct_repayment_transaction {
+        string txn_id PK "grain: one valid payment"
+        string loan_id
+        date txn_date FK
+        string branch_id FK
+        string product_id FK
+        string segment_id FK
+        string channel FK
+        float amount_inr
+    }
+    dim_date {
+        date date_day PK
+        int year
+        int quarter
+        date month_start
+        date month_end
+    }
+    dim_branch {
+        string branch_id PK
+        string branch_name
+        string state
+    }
+    dim_product {
+        string product_id PK
+        string product_name
+        string product_category
+    }
+    dim_borrower_segment {
+        string segment_id PK
+        string segment_name
+    }
+    dim_channel {
+        string channel PK
+        string channel_group
+        bool is_digital
+    }

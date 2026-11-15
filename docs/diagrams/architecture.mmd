@@ -1,0 +1,26 @@
+flowchart LR
+  GEN["<b>1. Generate</b><br/>generate_data.py<br/>55k loans, 636k payments<br/>11 seeded issues"]
+  CSV[("data/raw<br/>7 CSV files")]
+  LOAD["<b>2. Load</b><br/>load_raw.py<br/>explicit schemas"]
+  RAW[("BigQuery<br/>raw")]
+  PROF["<b>Profile</b><br/>profile_raw.py<br/>11 checks"]
+  DBT["<b>3. Transform (dbt)</b><br/>staging, validation<br/>star schema, KPIs"]
+  TEST{{"74 tests"}}
+  MART[("BigQuery<br/>staging + marts")]
+  DASH["<b>4. Dashboard</b><br/>Data Studio<br/>4 pages"]
+  HAND["<b>Hand check</b><br/>PAR30 from raw CSVs"]
+
+  GEN --> CSV --> LOAD --> RAW --> DBT --> MART --> DASH
+  RAW --> PROF
+  TEST -.-> DBT
+  CSV --> HAND
+  HAND -. "3.05% = 3.05%" .-> DASH
+
+  classDef py fill:#e0f2fe,stroke:#0284c7
+  classDef store fill:#eef2f7,stroke:#64748b
+  classDef dbt fill:#dcfce7,stroke:#16a34a
+  classDef out fill:#fef3c7,stroke:#d97706
+  class GEN,LOAD,PROF,HAND py
+  class CSV,RAW,MART store
+  class DBT,TEST dbt
+  class DASH out
