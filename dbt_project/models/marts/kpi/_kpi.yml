@@ -1,0 +1,48 @@
+version: 2
+
+# KPI models. Exact formulas: docs/kpi_definitions.md
+models:
+  - name: kpi_portfolio_monthly
+    description: "Additive portfolio and collection measures. Grain: month-end x branch x product."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [snapshot_month, branch_id, product_id]
+      - dbt_utils.expression_is_true:
+          name: kpi_par_outstanding_within_portfolio
+          arguments:
+            expression: "par90_outstanding <= par30_outstanding and par30_outstanding <= gross_loan_portfolio"
+
+  - name: kpi_portfolio_summary
+    description: "Company-level PAR30, PAR90 and collection efficiency. Grain: month-end."
+    columns:
+      - name: snapshot_month
+        data_tests: [unique, not_null]
+      - name: par30_pct
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 0, max_value: 100}
+
+  - name: kpi_vintage_curves
+    description: "Cumulative repayment by months since disbursement. Grain: cohort x months since disbursement."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [disbursement_month, months_since_disbursement]
+
+  - name: kpi_digital_collections_monthly
+    description: "Digital share of collections with MoM and YoY growth. Grain: month."
+    columns:
+      - name: month
+        data_tests: [unique, not_null]
+      - name: digital_share_value_pct
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 0, max_value: 100}
+
+  - name: kpi_channel_monthly
+    description: "Payments, value and average payment size by channel. Grain: month x channel."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [month, channel]
